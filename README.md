@@ -1,6 +1,3 @@
-# CL-SEQMAK
-Common lisp (SBCL) rewrite of SEQMAK.
-
 `CL-SEQMAK`
 ===========
 
