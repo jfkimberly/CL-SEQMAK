@@ -28,7 +28,6 @@
 (ql:quickload :alexandria)
 
 
-
 (defparameter *arms* (make-array 0 :fill-pointer T))
 (defparameter *strand-list* (make-hash-table))
 (defparameter *linker-list* '())
@@ -37,7 +36,6 @@
 
 (defun help ()
   "Help function which shows all possible commands."
-  
   (format t "Possible commands are:~%")
   (terpri)
   (format t "(na) newarms~%")
@@ -45,6 +43,7 @@
   (format t "(l)  link~%")
   (format t "(c)  crunch~%")
   (format t "(sg) strandgen~%")
+  (format t "(ca) crunch-all~%")
   (format t "(rc) repeat-check~%")
   (format t "(dc) dyad-check~%")
   (format t "(sv) save~%")
@@ -366,9 +365,20 @@ and generates arms from it using the 'armgen' function."
     (strandgen)))
 
 
+(defun crunch-all ()
+  "Generates random sequences for all the strands at once."
+  (if *strand-list*
+      (progn
+	(dolist (strand-key (alexandria:hash-table-keys *strand-list*))
+	  (setf (gethash strand-key *strand-list*)
+		(seqgen (length (gethash strand-key *strand-list*)))))
+	(format t "All sequences have been created.~%"))
+      (format t "No strands. Need to create strands first.~%")))
+
+
 (defun substring-positions (substring string)
-  ;; find all occurrences of 'substring' in 'string' and return their positions
-  ;; in a list
+  "Find all occurrences of 'substring' in 'string' and return their positions
+in a list."
   (loop
      :with sub-length = (length substring)
      :for i :from 0 :to (- (length string) sub-length)
@@ -378,9 +388,8 @@ and generates arms from it using the 'armgen' function."
 
 
 (defun repeat-check ()
-  ;; checks the number of repeats and returns a list of the positions of the
-  ;; repeating segments
-
+  "Checks the number of repeats and returns a list of the positions of the
+repeating segments."
   (format t "Enter min. CRITON size, max. CRITON size, min. # of repeats, max. # of repeats~%")
   (format t "(ex) 4,8,3,6~%")
 
@@ -606,6 +615,8 @@ table."
 	    (funcall #'crunch))
 	   ((strandgen sg)
 	    (funcall #'strandgen))
+	   ((crunch-all ca)
+	    (funcall #'crunch-all))
 	   ((repeat-check rc)
 	    (funcall #'repeat-check))
 	   ((dyad-check dc)
