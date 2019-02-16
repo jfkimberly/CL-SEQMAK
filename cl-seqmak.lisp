@@ -236,6 +236,23 @@ direction and returns them as a list. Used in the 'linker' function."
 		   :start1 start))))
 
 
+(defun count-substrings (substring string)
+  "Count the number of times 'substring' appears in 'string'."
+  (loop
+    :with sub-length = (length substring)
+    :for i :from 0 :to (- (length string) sub-length)
+    :when (string= string substring
+		   :start1 i :end1 (+ i sub-length))
+      count it))
+
+
+(defun repeats (segment)
+  "Returns the number of times 'segment' is repeated in all the strands."
+  (let ((repeatseg 0))
+    (dolist (strand (alexandria:hash-table-values *strand-list*) repeatseg)
+      (incf repeatseg (count-substrings segment strand)))))
+
+
 (defun seggen (segsize)
   "Creates a random 'segment' of size 'segsize' and stores it in
   *segment-list*. Used in 'crunch function. If 'segment' already exists in
@@ -310,23 +327,6 @@ the arms in odd-numbered positions, e.g. 8, are reversed and concatenated"
 	  (format t "~{~a ~}~%" (chop (cdr strand-dat) 5))
 	  (terpri)
 	  ))))
-
-
-(defun count-substrings (substring string)
-  "Count the number of times 'substring' appears in 'string'."
-  (loop
-    :with sub-length = (length substring)
-    :for i :from 0 :to (- (length string) sub-length)
-    :when (string= string substring
-		   :start1 i :end1 (+ i sub-length))
-      count it))
-
-
-(defun repeats (segment)
-  "Returns the number of times 'segment' is repeated in all the strands."
-  (let ((repeatseg 0))
-    (dolist (strand (alexandria:hash-table-values *strand-list*) repeatseg)
-      (incf repeatseg (count-substrings segment strand)))))
 
 
 (defun crunch ()
