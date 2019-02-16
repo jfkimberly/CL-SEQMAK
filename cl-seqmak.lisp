@@ -38,11 +38,11 @@
   "Help function which shows all possible commands."
   (format t "Possible commands are:~%")
   (terpri)
-  (format t "(na) newarms~%")
+  (format t "(na) new-arms~%")
   (format t "(s)  show~%")
   (format t "(l)  link~%")
   (format t "(c)  crunch~%")
-  (format t "(sg) strandgen~%")
+  (format t "(sg) strand-generator~%")
   (format t "(ca) crunch-all~%")
   (format t "(rc) repeat-check~%")
   (format t "(dc) dyad-check~%")
@@ -50,13 +50,13 @@
   (format t "(ld) load~%")
   (format t "quit~%")
   (terpri)
-  (format t "E.g., type 'na' or 'newarms' and hit 'Enter'.~%")
+  (format t "E.g., type 'na' or 'new-arms' and hit 'Enter'.~%")
   (format t "Use '--help' for more information about a command, e.g. 'na --help'~%"))
 
 
 (defun arm-len ()
   "Asks the user for the length of the subarms ('arm-length'); used in
-'newarms' function."
+'new-arms' function."
   (format t "What is the length of the subarms of these arms?~%")
   (let ((arm-length (read)))
     (cond ((equal arm-length 'quit) 'nil)
@@ -69,7 +69,7 @@
 	       (arm-len))))))
 
  
-(defun newarms ()
+(defun new-arms ()
   "Asks the user for the number of arms which are stored in *arms* array. The
   number of arms is the number of dotted lists in the array and the 'arm-len'
   function used in this function determines the length of the sequence (and its
@@ -86,7 +86,7 @@
 	   arm-numbers)
 	  (T (progn
 	       (format t "Type in a positive integer.~%")
-	       (newarms))))
+	       (new-arms))))
 
     ;; calls 'arm-len' function to set the the length of the subarms in
     ;; 'arm-length'
@@ -172,7 +172,7 @@ direction and returns them as a list. Used in the 'linker' function."
     (setf *linker-list* (reverse link3))))
 
 
-(defun seqgen (criton)
+(defun sequence-generator (criton)
   "Create a random string consisting of the bases A, G, C T of length
 'criton'."
   (let ((segment (make-array criton
@@ -181,7 +181,7 @@ direction and returns them as a list. Used in the 'linker' function."
     (dotimes (k criton segment) (vector-push (alexandria:random-elt *bases*) segment))))
 
 
-(defun compgen (segment)
+(defun complement-generator (segment)
   "Create a complementary string of 'segment'."
   (map 'string (lambda (c)
 		 (case (char-upcase c)
@@ -217,22 +217,22 @@ direction and returns them as a list. Used in the 'linker' function."
        (accept-decision)))))
 
 
-(defun armgen (segment crunch-dat)
+(defun arm-generator (segment crunch-data)
   "Takes a 'segment' string, creates its complement, and replaces a part or the
-  whole arm in *arms* determined by 'armnum' (first element of list
-  'crunch-dat') starting at base position 'start' (second element of list
-  'crunch-dat')."
-  (let ((armnum (1- (first crunch-dat)))
-	(start (1- (second crunch-dat)))
-;	(end (1- (third crunch-dat)))
-	(comp-segment (compgen segment)))
+  whole arm in *arms* determined by 'arm-number' (first element of list
+  'crunch-data') starting at base position 'start' (second element of list
+  'crunch-data')."
+  (let ((arm-number (1- (first crunch-data)))
+	(start (1- (second crunch-data)))
+;	(end (1- (third crunch-data)))
+	(comp-segment (complement-generator segment)))
 
-    (setf (car (aref *arms* armnum))
-	  (replace (car (aref *arms* armnum)) (string-upcase segment)
+    (setf (car (aref *arms* arm-number))
+	  (replace (car (aref *arms* arm-number)) (string-upcase segment)
 		   :start1 start))
 
-    (setf (cdr (aref *arms* armnum))
-	  (replace (cdr (aref *arms* armnum)) (string-upcase comp-segment)
+    (setf (cdr (aref *arms* arm-number))
+	  (replace (cdr (aref *arms* arm-number)) (string-upcase comp-segment)
 		   :start1 start))))
 
 
@@ -246,101 +246,102 @@ direction and returns them as a list. Used in the 'linker' function."
       count it))
 
 
-(defun repeats (segment)
+(defun repeat-count (segment)
   "Returns the number of times 'segment' is repeated in all the strands."
-  (let ((repeatseg 0))
-    (dolist (strand (alexandria:hash-table-values *strand-list*) repeatseg)
-      (incf repeatseg (count-substrings segment strand)))))
+  (let ((repeat-segment 0))
+    (dolist (strand (alexandria:hash-table-values *strand-list*) repeat-segment)
+      (incf repeat-segment (count-substrings segment strand)))))
 
 
-(defun seggen (segsize)
-  "Creates a random 'segment' of size 'segsize' and stores it in
+(defun segment-generator (segment-size)
+  "Creates a random 'segment' of size 'segment-size' and stores it in
   *segment-list*. Used in 'crunch function. If 'segment' already exists in
   *segment-list*, asks the user for use confirmation. If the 'segment' is
   accepted for use, stores 'segment' and its complement in *segment-list*. If
   'set' option is chosen, 'segment' sequence is determined by the user."
-  (let ((segment (seqgen segsize))
+  (let ((segment (sequence-generator segment-size))
 	(decision))
     
     (format t "~a~%" segment)
 
     ;; check how many repeats of 'segment' there are in all strands
-    (format t "There are ~d repeats of this segment.~%" (repeats segment))
+    (format t "There are ~d repeats of this segment.~%" (repeat-count segment))
     (format t "(a)ccept or (r)eject or (s)et~%")
     (setf decision (accept-decision))
 
     (case decision
       ((accept)
-       (return-from seggen segment))
+       (return-from segment-generator segment))
       ((reject)
-       (seggen segsize))
+       (segment-generator segment-size))
       ((set)
-       (format t "Enter your DNA sequence of length ~a.~%" segsize)
+       (format t "Enter your DNA sequence of length ~a.~%" segment-size)
        (setf segment (write-to-string (read)))
        (format t "Is \"~a\" the sequence you would like to use? (y/n)~%" segment)
-       (format t "There are ~d repeats of this segment.~%" (repeats segment))
+       (format t "There are ~d repeats of this segment.~%" (repeat-count segment))
        (case (user-decision)
 	 ((accept) segment)
-	 ((reject) (seggen segsize))
-	 ('abort (return-from seggen)))))))
+	 ((reject) (segment-generator segment-size))
+	 ('abort (return-from segment-generator)))))))
 
 
-(defun strandgen ()
+(defun strand-generator ()
   "Creates strands by combining the arms in *arms* according to *linker-list*.
 *linker-list* is a list of lists, e.g. ((4 8) (1 2 3 4) ...), which contains
-the arm numbers to be combined into strands. E.g. for 'link-elem' (4 8) [we
+the arm numbers to be combined into strands. E.g. for 'link-element' (4 8) [we
 need to subtract each number by 1, since the arm numbering starts at 0 (but is
 shown to the user to start at 1)], the arms in even-numbered
 positions (starting at 0) [e.g. 4 from (4 8)], are concatenated as is, whereas
-the arms in odd-numbered positions, e.g. 8, are reversed and concatenated"
+the arms in odd-numbered positions, e.g. 8, are reversed and concatenated."
   (let (strand
-	(link-elem-num 0)
+	(link-element-number 0)
 	;; start strand number at 1
-	(strandnum 1))
+	(strand-number 1))
     (terpri)
     ;; if *linker-list* exists, create strands by combining arms from the
     ;; *arms* array
     (if *linker-list*
 	(dolist (link *linker-list*)
 	  (setf strand 'nil)
-	  (dolist (link-elem link)
-	    (if (evenp link-elem-num)
+	  (dolist (link-element link)
+	    (if (evenp link-element-number)
 		(setf strand
 		      (concatenate 'string
-				   (car (elt *arms* (1- link-elem))) strand))
+				   (car (elt *arms* (1- link-element))) strand))
 		(setf strand
 		      (concatenate 'string
-				   (reverse (cdr (elt *arms* (1- link-elem))))
+				   (reverse (cdr (elt *arms* (1- link-element))))
 				   strand)))
-	    (incf link-elem-num))
+	    (incf link-element-number))
 
-	  (setf (gethash strandnum *strand-list*) strand)
-	  (format t "strand ~d (~d bases)~%" strandnum (length strand))
-	  (incf strandnum)
+	  (setf (gethash strand-number *strand-list*) strand)
+	  (format t "strand ~d (~d bases)~%" strand-number (length strand))
+	  (incf strand-number)
 	  (format t "~{~a ~}~%" (chop strand 5))
 	  (terpri))
 	;; else if imported from user strand file just print out strand number
 	;; and strand sequences
-	(dolist (strand-dat (reverse
+	(dolist (strand-data (reverse
 			     (alexandria:hash-table-alist *strand-list*)))
-	  (format t "strand ~a (~a bases)~%" (car strand-dat) (length (cdr strand-dat)))
-	  (format t "~{~a ~}~%" (chop (cdr strand-dat) 5))
+	  (format t "strand ~a (~a bases)~%"
+		  (car strand-data) (length (cdr strand-data)))
+	  (format t "~{~a ~}~%" (chop (cdr strand-data) 5))
 	  (terpri)
 	  ))))
 
 
 (defun crunch ()
-  "Randomly generates or user defines a sequence using the 'seggen' function
-and generates arms from it using the 'armgen' function."
+  "Randomly generates or user defines a sequence using the 'segment-generator'
+function and generates arms from it using the 'arm-generator' function."
   (format t "Please enter the following:~%")
   (format t "arm #, starting base, end base~%")
 
-  (let ((crunch-dat (mapcar #'parse-integer
+  (let ((crunch-data (mapcar #'parse-integer
  			    (mapcar #'clean (split (read-line) ","))))
 	(arm)
 	(start)
 	(end)
-	(segsize)
+	(segment-size)
 	(segment))
 
     ;; check if repeats should be allowed
@@ -348,21 +349,21 @@ and generates arms from it using the 'armgen' function."
 
     ;; need to change this code to conditions
     ;; DO NOT USE THIS CODE
-    ;; (unless (or (= (length crunch-dat) 4)
-    ;; 		(= (length crunch-dat) 5))
+    ;; (unless (or (= (length crunch-data) 4)
+    ;; 		(= (length crunch-data) 5))
     ;;   (format t "Please enter only 4 or 5 numbers separated by commas!~%")
     ;;   (crunch))
 
-    (setf arm (1- (first crunch-dat))
-	  start (1- (second crunch-dat))
-	  end (1- (third crunch-dat))
-	  segsize (1+ (- end start)))
+    (setf arm (1- (first crunch-data))
+	  start (1- (second crunch-data))
+	  end (1- (third crunch-data))
+	  segment-size (1+ (- end start)))
 
-    ;; set 'segment' to generated sequence of length 'segsize' and into
+    ;; set 'segment' to generated sequence of length 'segment-size' and into
     ;; designated arm which in turn saves it and its complement to *arms*
-    (setf segment (seggen segsize))
-    (armgen segment crunch-dat)
-    (strandgen)))
+    (setf segment (segment-generator segment-size))
+    (arm-generator segment crunch-data)
+    (strand-generator)))
 
 
 (defun crunch-all ()
@@ -371,7 +372,8 @@ and generates arms from it using the 'armgen' function."
       (progn
 	(dolist (strand-key (alexandria:hash-table-keys *strand-list*))
 	  (setf (gethash strand-key *strand-list*)
-		(seqgen (length (gethash strand-key *strand-list*)))))
+		(sequence-generator
+		 (length (gethash strand-key *strand-list*)))))
 	(format t "All sequences have been created.~%"))
       (format t "No strands. Need to create strands first.~%")))
 
@@ -401,7 +403,7 @@ repeating segments."
 	 (maxrep (fourth repeat-dat))
 	 (test-segment)
 	 (segment-list ())
-	 (repeat-pos)
+	 (repeat-position)
 	 (repeat-position-list ())
 	 (repeat-count))
 
@@ -424,26 +426,27 @@ repeating segments."
 	;; dissect each strand from the *strand-list* into criton size
 	;; segments, 'test-segment', starting from the 5' terminus and ending
 	;; at the 3' terminus (minus the criton size)
-	(dolist (base-num (alexandria:iota (1+ (- (length strand) criton))))
-	  (setf test-segment (subseq strand base-num (+ base-num criton)))
+	(dolist (base-number (alexandria:iota (1+ (- (length strand) criton))))
+	  (setf test-segment (subseq strand base-number (+ base-number criton)))
 
 	  ;; check whether the dissected segment, 'test-segment', is in the
 	  ;; 'segment-list' which means that it's already been checked for
 	  ;; repeats
 	  (unless (member test-segment segment-list :test #'equal)
 
-	    ;; take alist (strandnum . sequence) of each strand in
+	    ;; take alist (strand-number . sequence) of each strand in
 	    ;; *strand-list* and use 'substring-positions' function to check
 	    ;; for repeats and return a list of their positions
 	    (setf segment-list (cons test-segment segment-list))
 	    (setf repeat-position-list ())
-	    (dolist (strand-dat (alexandria:hash-table-alist *strand-list*))
-	      (setf repeat-pos (substring-positions test-segment (cdr strand-dat)))
+	    (dolist (strand-data (alexandria:hash-table-alist *strand-list*))
+	      (setf repeat-position
+		    (substring-positions test-segment (cdr strand-data)))
 	      ;; if repeats are found, store in 'repeat-position-list' in
-	      ;; (strandnum (starting base positions)) format
-	      (if repeat-pos
+	      ;; (strand-number (starting base positions)) format
+	      (if repeat-position
 		  (setf repeat-position-list
-			(cons (list (car strand-dat) repeat-pos)
+			(cons (list (car strand-data) repeat-position)
 			      repeat-position-list))))
 
 	    ;; count repeating segments in 'repeat-count'
@@ -466,10 +469,10 @@ repeating segments."
 (defun dyad-check ()
   "Checks each strand (individually) for segments of dyad symmetry."
   (format t "Enter the segment size (in nt's) of dyad symmetry check:~%")
-  (let ((segsize (read))
+  (let ((segment-size (read))
 	(test-segment)
 	(dyad)
-	(dyad-pos)
+	(dyad-position)
 	(dyad-position-list ())
 	(dyad-count)
 	(total-dyad-count)
@@ -477,26 +480,30 @@ repeating segments."
     
     ;; need to change this code to conditions
     ;; DO NOT USE THIS CODE
-    ;; (unless (integerp segsize)
+    ;; (unless (integerp segment-size)
     ;;   (dyad-check))
 
-    ;; iterate through each strand in *strand-list* where 'strand-dat' is a
+    ;; iterate through each strand in *strand-list* where 'strand-data' is a
     ;; list of lists, e.g. ((1 . "xxxx") ... ), with the car of each list
-    ;; indicating the strandnum and the cdr indicating the strand sequence
-    (dolist (strand-dat (reverse (alexandria:hash-table-alist *strand-list*)))
+    ;; indicating the strand-number and the cdr indicating the strand sequence
+    (dolist (strand-data (reverse (alexandria:hash-table-alist *strand-list*)))
       (setf dyad-list ())
       (setf total-dyad-count 0)
       (terpri)
-      (format t "Strand ~a dyads:~%" (car strand-dat))
-      ;; 'base-num' is the base number of 'strand' starting from the 5'-end and
-      ;; ending at the 3'-end (minus the length of the input 'segsize') to be
-      ;; used as the starting position of the 'test-segment'
-      (dolist (base-num (alexandria:iota (1+ (- (length (cdr strand-dat)) segsize))))
+      (format t "Strand ~a dyads:~%" (car strand-data))
+      ;; 'base-number' is the base number of 'strand' starting from the 5'-end
+      ;; and ending at the 3'-end (minus the length of the input
+      ;; 'segment-size') to be used as the starting position of the
+      ;; 'test-segment'
+      (dolist (base-number (alexandria:iota
+			    (1+ (- (length (cdr strand-data)) segment-size))))
 	
 	;; 'test-segment' is the segment of the strand to be converted into a
 	;; 'dyad' segment and tested for dyad symmetry
-	(setf test-segment (subseq (cdr strand-dat) base-num (+ base-num segsize)))
-	(setf dyad (reverse (compgen test-segment)))
+	(setf test-segment
+	      (subseq (cdr strand-data) base-number
+		      (+ base-number segment-size)))
+	(setf dyad (reverse (complement-generator test-segment)))
 
 	;; 'dyad-count' counts the dyad symmetric segments for given strand and
 	;; 'dyad-position-list' is a dotted list with car of strand number and
@@ -508,16 +515,16 @@ repeating segments."
 	;; dyad has already been tested and printed out
 	(unless (member (write-to-string test-segment) dyad-list :test #'equal)
 
-	  ;; check for dyad symmetric segments, and set 'dyad-pos' to a list of
-	  ;; their positions
-	  (setf dyad-pos (substring-positions dyad (cdr strand-dat)))
+	  ;; check for dyad symmetric segments, and set 'dyad-position' to a
+	  ;; list of their positions
+	  (setf dyad-position (substring-positions dyad (cdr strand-data)))
 
-	  ;; if 'dyad-pos' is non-nil (non-empty list), then set
+	  ;; if 'dyad-position' is non-nil (non-empty list), then set
 	  ;; 'dyad-position-list' as dotted list with car of strand number and
 	  ;; cdr of list of their starting positions, e.g. (1 . (6 20))
-	  (when dyad-pos
+	  (when dyad-position
 	    (setf dyad-position-list
-		  (cons (list (car strand-dat) dyad-pos)
+		  (cons (list (car strand-data) dyad-position)
 			dyad-position-list))
 	    ;; if a dyad symmetric segment is found, store it in 'dyad-list' so
 	    ;; it doesn't search for it again
@@ -530,7 +537,7 @@ repeating segments."
 
 	  (if (>= dyad-count 1)
 	      (format t "(~d)'~a'-...-~a'~a' (~d repeats)~%"
-		      base-num test-segment dyad-pos dyad dyad-count))
+		      base-number test-segment dyad-position dyad dyad-count))
 	  ;; increase 'total-dyad-count' for given strand
 	  (incf total-dyad-count dyad-count)))
 
@@ -538,7 +545,7 @@ repeating segments."
       ;; strand
       (if (= total-dyad-count 0)
 	  (format t "Strand ~d has no dyad symmetric repeats of length ~d~%"
-		  (car strand-dat) segsize)))))
+		  (car strand-data) segment-size)))))
 
 
 (defun save ()
@@ -560,9 +567,9 @@ repeating segments."
       (with-open-file (stream file-name :direction :output :if-exists :supersede)
 	(format stream "All sequences of the strands and arms are in the 5' -> 3' direction.~%~%")
 	;; write strand # and sequence to file
-	(dolist (strand-dat (reverse (alexandria:hash-table-alist *strand-list*)))
-	  (format stream "strand ~d:~%" (car strand-dat))
-	  (format stream "~a~%~%" (cdr strand-dat)))
+	(dolist (strand-data (reverse (alexandria:hash-table-alist *strand-list*)))
+	  (format stream "strand ~d:~%" (car strand-data))
+	  (format stream "~a~%~%" (cdr strand-data)))
 
 	;; write arm # and sequence to file
 	(dotimes (i (length *arms*))
@@ -577,7 +584,7 @@ separated by newlines. Each strand sequence is stored in the *strand-list* hash
 table."
   (format t "Enter the name of the file (e.g., strands.txt):~%")
   (let ((file-name (read-line))
-	(strandnum 1))
+	(strand-number 1))
     ;; check if file already exists
     (unless (probe-file file-name)
       (format t "File '~a' does not exist!~%" file-name)
@@ -590,8 +597,8 @@ table."
     	 :until (eq line 'eof)
 	 :unless (string= "" line)
 	 :do 
-	   (setf (gethash strandnum *strand-list*) (remove #\space line))
-	   (incf strandnum)))))
+	   (setf (gethash strand-number *strand-list*) (remove #\space line))
+	   (incf strand-number)))))
 
 
 (defun run-seqmak ()
@@ -604,8 +611,8 @@ table."
 	 (case command
 	   ((help)
 	    (funcall #'help))
-	   ((newarms na)
-	    (funcall #'newarms)
+	   ((new-arms na)
+	    (funcall #'new-arms)
 	    (format t "New arms created.~%"))
 	   ((show s)
 	    (funcall #'show))
@@ -613,8 +620,8 @@ table."
 	    (funcall #'linker))
 	   ((crunch c)
 	    (funcall #'crunch))
-	   ((strandgen sg)
-	    (funcall #'strandgen))
+	   ((strand-generator sg)
+	    (funcall #'strand-generator))
 	   ((crunch-all ca)
 	    (funcall #'crunch-all))
 	   ((repeat-check rc)
